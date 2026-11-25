@@ -1,0 +1,36 @@
+{
+  "name": "agent-compaction",
+  "version": "0.2.0",
+  "description": "Agent 多轮工具调用循环的上下文压缩：四级策略 + 结构化摘要 + 归档召回 + 用量校准，零依赖",
+  "type": "module",
+  "license": "MIT",
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./server": "./src/server.mjs"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "env.example",
+    "Dockerfile"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "demo": "node demo.mjs",
+    "demo:live": "node demo-live.mjs",
+    "serve": "node src/server.mjs",
+    "mutants": "node scripts/mutants.mjs"
+  },
+  "keywords": [
+    "agent",
+    "context",
+    "compaction",
+    "llm",
+    "token-budget",
+    "anthropic"
+  ],
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "scenario": "short",
+    "window": 40000,
+    "baselinePeak": 1015.9,
+    "compactedPeak": 1015.9,
+    "levels": {
+      "0": 3,
+      "1": 0,
+      "2": 0,
+      "3": 0
+    },
+    "archiveItems": 0,
+    "recallOk": false,
+    "finished": true,
+    "withinWindow": true,
+    "triggerOk": true,
+    "pass": true,
+    "usage": {
+      "input": 1713,
+      "output": 212
+    }
+  },
+  {
+    "scenario": "medium",
+    "window": 16000,
+    "baselinePeak": 17319.64227,
+    "compactedPeak": 11087.7,
+    "levels": {
+      "0": 2,
+      "1": 3,
+      "2": 0,
+      "3": 4
+    },
+    "archiveItems": 34,
+    "recallOk": true,
+    "finished": true,
+    "withinWindow": true,
+    "triggerOk": true,
+    "pass": true,
+    "usage": {
+      "input": 70562,
+      "output": 3197
+    }
+  },
+  {
+    "scenario": "long",
+    "window": 16000,
+    "baselinePeak": 66677.14159825801,
+    "compactedPeak": 10947.9,
+    "levels": {
+      "0": 2,
+      "1": 4,
+      "2": 0,
+      "3": 5
+    },
+    "archiveItems": 13,
+    "recallOk": true,
+    "finished": true,
+    "withinWindow": true,
+    "triggerOk": true,
+    "pass": true,
+    "usage": {
+      "input": 78113,
+      "output": 5741
+    }
+  }
+]

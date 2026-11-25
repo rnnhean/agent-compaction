@@ -1,0 +1,24 @@
+[
+  {
+    "scenario": "long",
+    "window": 4000,
+    "baselinePeak": 6392.435629208001,
+    "compactedPeak": 2986.4415706,
+    "levels": {
+      "0": 2,
+      "1": 3,
+      "2": 0,
+      "3": 6
+    },
+    "archiveItems": 6,
+    "recallOk": true,
+    "finished": true,
+    "withinWindow": true,
+    "triggerOk": true,
+    "pass": true,
+    "usage": {
+      "input": 21367,
+      "output": 2708
+    }
+  }
+]
