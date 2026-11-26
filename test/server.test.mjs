@@ -71,9 +71,22 @@ test('/recall 能按关键词取回被归档内容', async () => {
     assert.equal(typeof j.result, 'string');
 });
 
-test('未知路由返回 404', async () => {
+test('未知前端路由回落 index.html（SPA）', async () => {
     const r = await fetch(`${base}/nope`);
+    // 有构建产物时返回 SPA 外壳（200）；未构建时 503 提示去构建
+    assert.ok([200, 503].includes(r.status), `实际 ${r.status}`);
+});
+
+test('未知 API 路由仍返回 404', async () => {
+    const r = await fetch(`${base}/api/nope`);
     assert.equal(r.status, 404);
+});
+
+test('根路径返回 React 控制台', async () => {
+    const r = await fetch(`${base}/`);
+    assert.equal(r.status, 200);
+    assert.match(r.headers.get('content-type') || '', /text\/html/);
+    assert.match(await r.text(), /id="root"/);
 });
 
 test('/metrics 暴露 Prometheus 文本，且反映真实请求数', async () => {

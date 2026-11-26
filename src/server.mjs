@@ -10,7 +10,9 @@
  * 可测试性：createApp() 返回 http.Server 但不 listen，测试里可以 listen(0) 拿随机端口。
  */
 import { createServer } from 'node:http';
-import { pathToFileURL } from 'node:url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
 import { compact, DEFAULTS } from './compactor.mjs';
 import { Archive } from './archive.mjs';
@@ -24,6 +26,36 @@ const json = (res, code, body) => {
     res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(s) });
     res.end(s);
 };
+
+// React 控制台构建产物（web/dist）。未构建时给出明确提示，而不是白屏。
+const DIST_DIR = [process.env.WEB_DIST_DIR, fileURLToPath(new URL('../web/dist', import.meta.url))].find((d) => {
+    try {
+        return d && fs.existsSync(path.join(d, 'index.html'));
+    } catch {
+        return false;
+    }
+}) || null;
+const MIME = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.ico': 'image/x-icon',
+    '.json': 'application/json; charset=utf-8',
+};
+
+function serveStatic(res, url) {
+    if (!DIST_DIR) return json(res, 503, { error: '前端未构建：请在 web/ 下执行 npm install && npm run build' });
+    const rel = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
+    const target = path.join(DIST_DIR, rel);
+    // 防目录穿越：解析后必须仍在 DIST_DIR 内
+    const inside = path.resolve(target).startsWith(path.resolve(DIST_DIR));
+    const file = inside && fs.existsSync(target) && fs.statSync(target).isFile() ? target : path.join(DIST_DIR, 'index.html');
+    if (!fs.existsSync(file)) return json(res, 503, { error: '前端产物缺失' });
+    res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream', 'cache-control': inside ? 'public, max-age=3600' : 'no-store' });
+    res.end(fs.readFileSync(file));
+}
 
 const readBody = (req) => new Promise((resolve, reject) => {
     let size = 0;
@@ -51,6 +83,10 @@ export function createApp({ archive = new Archive(), summarize = null, metrics =
     return createServer(async (req, res) => {
         const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
+        if (req.method === 'GET' && !url.pathname.startsWith('/api/') && url.pathname !== '/health' && url.pathname !== '/metrics') {
+            return serveStatic(res, url);
+        }
+
         if (req.method === 'GET' && url.pathname === '/health') {
             return json(res, 200, {
                 ok: true,
@@ -66,7 +102,11 @@ export function createApp({ archive = new Archive(), summarize = null, metrics =
             return res.end(metrics.render(archive.items.length));
         }
 
-        if (req.method === 'POST' && url.pathname === '/compact') {
+        // 兼容两种前缀：/compact 与 /api/compact（前端走后者，与其它项目保持一致）
+        const isCompact = url.pathname === '/compact' || url.pathname === '/api/compact';
+        const isRecall = url.pathname === '/recall' || url.pathname === '/api/recall';
+
+        if (req.method === 'POST' && isCompact) {
             let body;
             try {
                 body = JSON.parse(await readBody(req));
@@ -98,7 +138,7 @@ export function createApp({ archive = new Archive(), summarize = null, metrics =
             }
         }
 
-        if (req.method === 'POST' && url.pathname === '/recall') {
+        if (req.method === 'POST' && isRecall) {
             let body;
             try {
                 body = JSON.parse(await readBody(req));

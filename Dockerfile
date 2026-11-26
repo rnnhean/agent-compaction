@@ -1,21 +1,21 @@
-# 零依赖，所以不需要 npm install 阶段；直接拷贝运行
+# 阶段 1：构建 React 控制台
+FROM node:22-alpine AS web
+WORKDIR /web
+COPY web/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY web ./
+RUN npm run build
+
+# 阶段 2：运行（零运行时依赖）
 FROM node:22-alpine
-
 WORKDIR /app
-ENV NODE_ENV=production \
-    PORT=8787
-
-# 只拷运行必需的文件，测试和 demo 不进镜像
+ENV NODE_ENV=production PORT=8787 WEB_DIST_DIR=/app/web/dist
 COPY package.json ./
 COPY src ./src
-
-# 非 root 运行
-RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
+COPY --from=web /web/dist ./web/dist
+RUN mkdir -p /data && addgroup -S app && adduser -S app -G app && chown -R app:app /app /data
 USER app
-
 EXPOSE 8787
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "src/server.mjs"]

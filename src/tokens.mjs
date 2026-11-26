@@ -14,9 +14,51 @@ export function estimateTokens(x) {
     return Math.ceil(cjk + (s.length - cjk) / 4);
 }
 
-/** 整个请求的估算 token：system + 每条消息（每条另加 4 个 token 的角色/分隔开销） */
+/** 单张图片 / 单个文档的估算 token（真实值与分辨率、编码有关，但都落在一个数量级内） */
+export const IMAGE_TOKEN_ESTIMATE = 2000;
+
+/**
+ * 按块类型估得更准：一律 JSON.stringify 会把 signature、id 这些元数据也算进去。
+ */
+export function estimateBlockTokens(block) {
+    if (!block || typeof block !== 'object') return estimateTokens(block);
+    switch (block.type) {
+        case 'text':
+            return estimateTokens(block.text);
+        case 'thinking':
+            return estimateTokens(block.thinking); // 不含 signature
+        case 'redacted_thinking':
+            return estimateTokens(block.data);
+        case 'tool_use':
+            return estimateTokens(String(block.name ?? '') + JSON.stringify(block.input ?? {}));
+        case 'tool_result': {
+            const c = block.content;
+            if (typeof c === 'string') return estimateTokens(c);
+            if (Array.isArray(c)) return c.reduce((n, b) => n + estimateBlockTokens(b), 0);
+            return estimateTokens(c);
+        }
+        case 'image':
+        case 'document':
+            return IMAGE_TOKEN_ESTIMATE;
+        default:
+            return estimateTokens(JSON.stringify(block));
+    }
+}
+
+/**
+ * 整个请求的估算 token：system + 每条消息（每条另加 4 个 token 的角色/分隔开销）。
+ *
+ * **整体 ×4/3 保守放大**：低估比高估危险得多——低估会压得太晚、直接撞 400；
+ * 高估最多多压一点，内容还在归档里可召回。
+ */
 export function messagesTokens(messages, system = '') {
-    return estimateTokens(system) + messages.reduce((n, m) => n + 4 + estimateTokens(m.content), 0);
+    const body = messages.reduce((n, m) => {
+        const c = m.content;
+        if (typeof c === 'string') return n + 4 + estimateTokens(c);
+        if (Array.isArray(c)) return n + 4 + c.reduce((k, b) => k + estimateBlockTokens(b), 0);
+        return n + 4 + estimateTokens(c);
+    }, 0);
+    return Math.ceil((estimateTokens(system) + body) * (4 / 3));
 }
 
 /**

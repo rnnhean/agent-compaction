@@ -1,8 +1,10 @@
-node_modules
+**/node_modules
+web/dist
 test
-scripts
+e2e
+bench
+results
 *.md
 .env*
 .git
 .github
-demo*.mjs

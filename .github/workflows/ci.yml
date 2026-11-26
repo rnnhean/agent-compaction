@@ -1,10 +1,7 @@
 name: CI
-
 on:
-  push:
-    branches: [main]
+  push: { branches: [main] }
   pull_request:
-
 jobs:
   test:
     runs-on: ${{ matrix.os }}
@@ -15,11 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-      - name: 单元测试与服务冒烟
-        run: npm test
-      - name: 离线 demo（回归：压缩峰值不应暴涨）
-        run: npm run demo
-      - name: 变异测试（验证测试本身有效）
-        run: npm run mutants
+        with: { node-version: '${{ matrix.node }}' }
+      - run: npm test
+      - run: npm run demo
+      - run: npm run mutants
+      - run: npm run eval

@@ -79,7 +79,9 @@ test('L1：旧工具结果进归档，最近的和目标不动，归档能取回
 
 test('L1 够用时不调摘要模型（能轻处理就不花钱、不冒摘要失真的风险）', async () => {
     const ms = await conversation(10);
-    const c = ctx();
+    // 估算现在按 4/3 保守放大，同一份内容算出来更大；给足窗口，让 L1 仍能独立压到线以下，
+    // 这样测的才是「L1 够用时不升级到 L2」这个意图，而不是在测窗口够不够。
+    const c = ctx({ window: 36_000 });
     const { report } = await compact(ms, c);
     assert.equal(report.level, 1);
     assert.equal(c.summarize.prompts.length, 0);
